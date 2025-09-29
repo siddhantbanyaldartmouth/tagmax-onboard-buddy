@@ -1,0 +1,173 @@
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PhaseContainer } from '../PhaseContainer';
+import { VehicleData } from '@/hooks/useOnboardingFlow';
+import licensePlateSample from '@/assets/license-plate-sample.jpg';
+
+interface LicenseEntryPhaseProps {
+  vehicleData: Partial<VehicleData>;
+  onUpdate: (data: Partial<VehicleData>) => void;
+  onNext: () => void;
+  onBack?: () => void;
+}
+
+const US_STATES = [
+  'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
+  'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
+  'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+  'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
+  'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
+];
+
+export const LicenseEntryPhase: React.FC<LicenseEntryPhaseProps> = ({
+  vehicleData,
+  onUpdate,
+  onNext,
+  onBack
+}) => {
+  const [entryMethod, setEntryMethod] = useState<'manual' | 'scan'>('manual');
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
+
+  const handleScan = async () => {
+    setIsScanning(true);
+    setScanError(null);
+
+    // Request camera permission and simulate scan
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      
+      // Show camera feed briefly, then simulate failure
+      setTimeout(() => {
+        // Stop camera stream
+        stream.getTracks().forEach(track => track.stop());
+        setIsScanning(false);
+        setScanError("Unable to scan license plate. Please enter manually.");
+        setEntryMethod('manual');
+      }, 3000); // Simulate scanning for 3 seconds
+      
+    } catch (error) {
+      setIsScanning(false);
+      setScanError("Camera access denied. Please enter manually.");
+      setEntryMethod('manual');
+    }
+  };
+
+  const canProceed = vehicleData.state && vehicleData.licensePlate && vehicleData.licensePlate.length > 0;
+
+  return (
+    <PhaseContainer
+      currentPhase={0}
+      totalPhases={4}
+      title="Confirm Vehicle Details"
+      subtitle="Let's get your vehicle information"
+    >
+      <div className="space-y-6">
+        <div>
+          <Label htmlFor="state">State</Label>
+          <Select 
+            value={vehicleData.state || ''} 
+            onValueChange={(value) => onUpdate({ state: value })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select your state" />
+            </SelectTrigger>
+            <SelectContent>
+              {US_STATES.map(state => (
+                <SelectItem key={state} value={state}>{state}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {vehicleData.state && (
+          <div className="space-y-4">
+            <Label>License Plate Entry Method</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                variant={entryMethod === 'manual' ? 'default' : 'outline'}
+                onClick={() => setEntryMethod('manual')}
+                className="font-medium"
+              >
+                Manual Entry
+              </Button>
+              <Button
+                variant={entryMethod === 'scan' ? 'default' : 'outline'}
+                onClick={() => {
+                  setEntryMethod('scan');
+                  if (!isScanning) handleScan();
+                }}
+                disabled={isScanning}
+                className="font-medium"
+              >
+                {isScanning ? 'Scanning...' : 'Scan Plate'}
+              </Button>
+            </div>
+
+            {scanError && (
+              <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+                <p className="text-destructive text-sm">{scanError}</p>
+              </div>
+            )}
+
+            {isScanning && (
+              <div className="p-4 bg-muted rounded-md text-center">
+                <div className="w-full h-32 bg-black/10 rounded-md flex items-center justify-center mb-2">
+                  <div className="w-8 h-8 bg-muted-foreground/20 animate-pulse"></div>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Point camera at license plate...
+                </p>
+              </div>
+            )}
+
+            {entryMethod === 'manual' && !isScanning && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-center">
+                  <img 
+                    src={licensePlateSample} 
+                    alt="License plate example" 
+                    className="w-32 h-20 object-cover border"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="licensePlate">License Plate Number</Label>
+                  <Input
+                    id="licensePlate"
+                    placeholder="Enter License Plate (e.g., 215 BG2)"
+                    value={vehicleData.licensePlate || ''}
+                    onChange={(e) => onUpdate({ licensePlate: e.target.value.toUpperCase() })}
+                    className="uppercase font-mono text-center text-lg"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="flex gap-3 mt-auto">
+          {onBack && (
+            <Button
+              variant="outline"
+              onClick={onBack}
+              className="flex-1"
+            >
+              Back
+            </Button>
+          )}
+          <Button
+            onClick={onNext}
+            disabled={!canProceed}
+            className="flex-1 font-semibold"
+            variant="default"
+          >
+            Continue
+          </Button>
+        </div>
+      </div>
+    </PhaseContainer>
+  );
+};
