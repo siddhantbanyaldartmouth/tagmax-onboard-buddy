@@ -1,3 +1,6 @@
+Here’s the ready-to-replace version of `tagmax-onboard-buddy-main/src/components/phases/LicenseEntryPhase.tsx` with the new image asset.
+
+```tsx
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -5,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PhaseContainer } from '../PhaseContainer';
 import { VehicleData } from '@/hooks/useOnboardingFlow';
-import licensePlateSample from '@/assets/license-plate-sample.jpg';
+import licensePlateSample from '@/assets/Example license plate.png';
 
 interface LicenseEntryPhaseProps {
   vehicleData: Partial<VehicleData>;
@@ -216,3 +219,4 @@ export const LicenseEntryPhase: React.FC<LicenseEntryPhaseProps> = ({
     </PhaseContainer>
   );
 };
+```
