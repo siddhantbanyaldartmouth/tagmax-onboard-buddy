@@ -32,7 +32,6 @@ export const LicenseConfirmPhase: React.FC<LicenseConfirmPhaseProps> = ({
       currentPhase={0}
       totalPhases={4}
       title="Confirm Vehicle Details"
-      subtitle="Please verify your information"
     >
       <div className="space-y-6">
         <Card className="p-4 bg-accent/20 border-accent">
