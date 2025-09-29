@@ -42,18 +42,17 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
       setShowCamera(true);
       
       if (videoRef.current) {
-        videoRef.current.srcObject = stream;
+        (videoRef.current as HTMLVideoElement).srcObject = stream;
       }
       
-      // Start AR detection simulation
+      // Start AR detection simulation after camera loads
       setTimeout(() => {
         setIsDetecting(true);
         // Simulate detection after 2 seconds
         setTimeout(() => {
           setIsDetecting(false);
-          // Random success/failure for demo
-          const success = Math.random() > 0.3;
-          setDetectionSuccess(success);
+          // Always show success for better UX in prototype
+          setDetectionSuccess(true);
         }, 2000);
       }, 1000);
       
@@ -78,11 +77,11 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
     if (videoRef.current) {
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
+      canvas.width = (videoRef.current as HTMLVideoElement).videoWidth;
+      canvas.height = (videoRef.current as HTMLVideoElement).videoHeight;
       
       if (context) {
-        context.drawImage(videoRef.current, 0, 0);
+        context.drawImage(videoRef.current as HTMLVideoElement, 0, 0);
         canvas.toBlob((blob) => {
           if (blob) {
             const file = new File([blob], 'installation-photo.jpg', { type: 'image/jpeg' });
@@ -159,14 +158,25 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
               className="hidden"
             />
 
-            <Button
-              onClick={startCamera}
-              className="w-full flex items-center gap-2"
-              variant="default"
-            >
-              <Camera className="w-4 h-4" />
-              Take Photo
-            </Button>
+            <div className="space-y-3">
+              <Button
+                onClick={startCamera}
+                className="w-full flex items-center gap-2"
+                variant="default"
+              >
+                <Camera className="w-4 h-4" />
+                Take Photo
+              </Button>
+              
+              <Button
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full flex items-center gap-2"
+                variant="outline"
+              >
+                <Upload className="w-4 h-4" />
+                Upload from Gallery
+              </Button>
+            </div>
           </>
         ) : showCamera ? (
           <>
@@ -236,7 +246,7 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
                     setIsDetecting(true);
                     setTimeout(() => {
                       setIsDetecting(false);
-                      setDetectionSuccess(Math.random() > 0.3);
+                      setDetectionSuccess(true);
                     }, 2000);
                   }}
                   className="flex-1"
