@@ -5,8 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PhaseContainer } from '../PhaseContainer';
 import { VehicleData } from '@/hooks/useOnboardingFlow';
-// Assume this PNG exists in the same assets folder as your other images
-import exampleLicensePlate from '@/assets/Example license plate.png';
+import licensePlateSample from '@/assets/license-plate-sample.jpg';
 
 interface LicenseEntryPhaseProps {
   vehicleData: Partial<VehicleData>;
@@ -31,52 +30,52 @@ export const LicenseEntryPhase: React.FC<LicenseEntryPhaseProps> = ({
 }) => {
   const [entryMethod, setEntryMethod] = useState<'manual' | 'scan'>('manual');
   const [isScanning, setIsScanning] = useState(false);
-  const [scanMessage, setScanMessage] = useState<string | null>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const handleScan = async () => {
-    setEntryMethod('scan');
     setIsScanning(true);
-    setScanMessage('Opening camera...');
+    setScanError(null);
 
     try {
-      // Use front camera for the prototype effect
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user' },
-        audio: false
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
       });
       setStream(mediaStream);
+      
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
       }
-
-      // Simple prototype: show live video briefly, then return to manual
-      setScanMessage('Scanning...');
+      
+      // Simulate scanning for 5 seconds, then show error and return to manual
       setTimeout(() => {
-        mediaStream.getTracks().forEach(t => t.stop());
+        if (mediaStream) {
+          mediaStream.getTracks().forEach(track => track.stop());
+        }
         setStream(null);
         setIsScanning(false);
-        setScanMessage(null);
+        setScanError("Unable to scan license plate. Please enter manually.");
         setEntryMethod('manual');
-      }, 3000);
-    } catch {
+      }, 5000);
+      
+    } catch (error) {
       setIsScanning(false);
-      setScanMessage('Camera permission denied. Please enter plate manually.');
+      setScanError("Camera access denied. Please enter manually.");
       setEntryMethod('manual');
     }
   };
 
-  // Cleanup if user navigates away
+  // Cleanup stream on unmount
   useEffect(() => {
     return () => {
       if (stream) {
-        stream.getTracks().forEach(t => t.stop());
+        stream.getTracks().forEach(track => track.stop());
       }
     };
   }, [stream]);
 
-  const canProceed = !!(vehicleData.state && vehicleData.licensePlate && vehicleData.licensePlate.length > 0);
+  const canProceed = vehicleData.state && vehicleData.licensePlate && vehicleData.licensePlate.length > 0;
 
   return (
     <PhaseContainer
@@ -88,8 +87,8 @@ export const LicenseEntryPhase: React.FC<LicenseEntryPhaseProps> = ({
       <div className="space-y-6">
         <div>
           <Label htmlFor="state">State</Label>
-          <Select
-            value={vehicleData.state || ''}
+          <Select 
+            value={vehicleData.state || ''} 
             onValueChange={(value) => onUpdate({ state: value })}
           >
             <SelectTrigger>
@@ -116,7 +115,10 @@ export const LicenseEntryPhase: React.FC<LicenseEntryPhaseProps> = ({
               </Button>
               <Button
                 variant={entryMethod === 'scan' ? 'default' : 'outline'}
-                onClick={() => !isScanning && handleScan()}
+                onClick={() => {
+                  setEntryMethod('scan');
+                  if (!isScanning) handleScan();
+                }}
                 disabled={isScanning}
                 className="font-medium"
               >
@@ -124,8 +126,14 @@ export const LicenseEntryPhase: React.FC<LicenseEntryPhaseProps> = ({
               </Button>
             </div>
 
-            {entryMethod === 'scan' && (
-              <div className="space-y-3">
+            {scanError && (
+              <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+                <p className="text-destructive text-sm">{scanError}</p>
+              </div>
+            )}
+
+            {isScanning && (
+              <div className="space-y-4">
                 <div className="relative aspect-video bg-black overflow-hidden rounded-md">
                   <video
                     ref={videoRef}
@@ -134,16 +142,77 @@ export const LicenseEntryPhase: React.FC<LicenseEntryPhaseProps> = ({
                     muted
                     className="w-full h-full object-cover"
                   />
+                  
+                  {/* Scanning overlay */}
+                  <div className="absolute inset-0 pointer-events-none">
+                    {/* License plate target area */}
+                    <div className="absolute inset-8 border-2 border-yellow-400 bg-transparent">
+                      <div className="absolute -top-6 left-0 text-yellow-400 text-xs bg-black/50 px-2 py-1">
+                        Position license plate within frame
+                      </div>
+                    </div>
+                    
+                    {/* Scanning animation */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-16 h-16 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                    
+                    {/* Scanning text */}
+                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-sm bg-black/70 px-4 py-2 rounded">
+                      Scanning license plate...
+                    </div>
+                  </div>
                 </div>
-                {scanMessage && (
-                  <p className="text-sm text-muted-foreground text-center">{scanMessage}</p>
-                )}
+                <p className="text-sm text-muted-foreground text-center">
+                  Point camera at license plate and hold steady...
+                </p>
               </div>
             )}
 
-            {entryMethod === 'manual' && (
+            {entryMethod === 'manual' && !isScanning && (
               <div className="space-y-4">
                 <div className="flex items-center justify-center">
-                  <img
-                    src={exampleLicensePlate}
-                    alt="License plate example"
+                  <img 
+                    src={licensePlateSample} 
+                    alt="License plate example" 
+                    className="w-32 h-20 object-cover border"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="licensePlate">License Plate Number</Label>
+                  <Input
+                    id="licensePlate"
+                    placeholder="Enter License Plate (e.g., 215 BG2)"
+                    value={vehicleData.licensePlate || ''}
+                    onChange={(e) => onUpdate({ licensePlate: e.target.value.toUpperCase() })}
+                    className="uppercase font-mono text-center text-lg"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="flex gap-3 mt-auto">
+          {onBack && (
+            <Button
+              variant="outline"
+              onClick={onBack}
+              className="flex-1"
+            >
+              Back
+            </Button>
+          )}
+          <Button
+            onClick={onNext}
+            disabled={!canProceed}
+            className="flex-1 font-semibold"
+            variant="default"
+          >
+            Continue
+          </Button>
+        </div>
+      </div>
+    </PhaseContainer>
+  );
+};
