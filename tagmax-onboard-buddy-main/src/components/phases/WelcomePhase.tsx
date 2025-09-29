@@ -24,10 +24,6 @@ export const WelcomePhase: React.FC<WelcomePhaseProps> = ({ onNext }) => {
         </div>
         
         <div className="text-center space-y-6">
-          <h1 className="text-3xl font-bold text-foreground">
-            Welcome – Let's get your Tag Max setup
-          </h1>
-          
           <div className="flex justify-center">
             <img 
               src={tagMaxPhoto} 
