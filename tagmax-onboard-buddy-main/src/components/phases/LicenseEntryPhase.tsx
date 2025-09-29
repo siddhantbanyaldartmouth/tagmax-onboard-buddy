@@ -1,6 +1,3 @@
-Here’s the ready-to-replace version of `tagmax-onboard-buddy-main/src/components/phases/LicenseEntryPhase.tsx` with the new image asset.
-
-```tsx
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -219,4 +216,3 @@ export const LicenseEntryPhase: React.FC<LicenseEntryPhaseProps> = ({
     </PhaseContainer>
   );
 };
-```
