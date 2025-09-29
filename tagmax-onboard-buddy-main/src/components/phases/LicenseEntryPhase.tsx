@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,23 +31,33 @@ export const LicenseEntryPhase: React.FC<LicenseEntryPhaseProps> = ({
   const [entryMethod, setEntryMethod] = useState<'manual' | 'scan'>('manual');
   const [isScanning, setIsScanning] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const handleScan = async () => {
     setIsScanning(true);
     setScanError(null);
 
-    // Request camera permission and simulate scan
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      });
+      setStream(mediaStream);
       
-      // Show camera feed briefly, then simulate failure
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
+      
+      // Simulate scanning for 5 seconds, then show error and return to manual
       setTimeout(() => {
-        // Stop camera stream
-        stream.getTracks().forEach(track => track.stop());
+        if (mediaStream) {
+          mediaStream.getTracks().forEach(track => track.stop());
+        }
+        setStream(null);
         setIsScanning(false);
         setScanError("Unable to scan license plate. Please enter manually.");
         setEntryMethod('manual');
-      }, 3000); // Simulate scanning for 3 seconds
+      }, 5000);
       
     } catch (error) {
       setIsScanning(false);
@@ -55,6 +65,15 @@ export const LicenseEntryPhase: React.FC<LicenseEntryPhaseProps> = ({
       setEntryMethod('manual');
     }
   };
+
+  // Cleanup stream on unmount
+  useEffect(() => {
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [stream]);
 
   const canProceed = vehicleData.state && vehicleData.licensePlate && vehicleData.licensePlate.length > 0;
 
@@ -114,12 +133,38 @@ export const LicenseEntryPhase: React.FC<LicenseEntryPhaseProps> = ({
             )}
 
             {isScanning && (
-              <div className="p-4 bg-muted rounded-md text-center">
-                <div className="w-full h-32 bg-black/10 rounded-md flex items-center justify-center mb-2">
-                  <div className="w-8 h-8 bg-muted-foreground/20 animate-pulse"></div>
+              <div className="space-y-4">
+                <div className="relative aspect-video bg-black overflow-hidden rounded-md">
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover"
+                  />
+                  
+                  {/* Scanning overlay */}
+                  <div className="absolute inset-0 pointer-events-none">
+                    {/* License plate target area */}
+                    <div className="absolute inset-8 border-2 border-yellow-400 bg-transparent">
+                      <div className="absolute -top-6 left-0 text-yellow-400 text-xs bg-black/50 px-2 py-1">
+                        Position license plate within frame
+                      </div>
+                    </div>
+                    
+                    {/* Scanning animation */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-16 h-16 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                    
+                    {/* Scanning text */}
+                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-sm bg-black/70 px-4 py-2 rounded">
+                      Scanning license plate...
+                    </div>
+                  </div>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Point camera at license plate...
+                <p className="text-sm text-muted-foreground text-center">
+                  Point camera at license plate and hold steady...
                 </p>
               </div>
             )}
