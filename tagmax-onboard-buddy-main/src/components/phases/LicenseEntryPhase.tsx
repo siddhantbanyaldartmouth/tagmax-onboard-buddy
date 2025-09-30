@@ -178,7 +178,7 @@ export const LicenseEntryPhase: React.FC<LicenseEntryPhaseProps> = ({
                     <img 
                       src={licensePlateSample} 
                       alt="License plate example" 
-                      className="w-32 h-20 object-cover border"
+                      className="w-48 h-32 object-contain border rounded"
                     />
                   </div>
                   <div>
