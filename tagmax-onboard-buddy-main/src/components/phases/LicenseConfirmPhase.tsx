@@ -55,13 +55,14 @@ export const LicenseConfirmPhase: React.FC<LicenseConfirmPhaseProps> = ({
   const handleConfirm = async () => {
     setIsUploading(true);
     
-    // Simulate upload process (2-3 seconds)
+    // Update data first
+    onUpdate({ 
+      nickname: nickname.trim() || undefined,
+      vin: vin
+    });
+    
+    // Simulate upload process (2.5 seconds) then transition
     setTimeout(() => {
-      onUpdate({ 
-        nickname: nickname.trim() || undefined,
-        vin: vin
-      });
-      setIsUploading(false);
       onNext();
     }, 2500);
   };
