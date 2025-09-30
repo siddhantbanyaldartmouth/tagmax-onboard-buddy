@@ -138,7 +138,7 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
                 variant="default"
               >
                 <Camera className="w-4 h-4" />
-                Take Photo
+                Auto Capture
               </Button>
               
               <Button
@@ -147,7 +147,7 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
                 variant="outline"
               >
                 <Upload className="w-4 h-4" />
-                Upload from Gallery
+                Take a Photo
               </Button>
             </div>
           </>
