@@ -215,7 +215,7 @@ export const LicenseEntryPhase: React.FC<LicenseEntryPhaseProps> = ({
                 <p className="text-sm text-blue-800 font-medium mb-1">Important Reminder:</p>
                 <p className="text-xs text-blue-700">
                   Please ensure your Tag Max device is installed in this vehicle. For any re-assignment to a different vehicle, 
-                  please contact our customer support team at <span className="font-mono">solotagsupport@cmtelematics.com</span>
+                  please contact our customer support team at <span className="text-blue-700">solotagsupport@cmtelematics.com</span>
                 </p>
               </div>
             </div>
