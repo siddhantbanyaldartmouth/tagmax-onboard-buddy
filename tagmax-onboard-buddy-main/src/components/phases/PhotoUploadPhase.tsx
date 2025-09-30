@@ -32,8 +32,12 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
       streamRef.current = stream;
       setShowCamera(true);
       
+      // Wait for video to load
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play();
+        };
       }
       
     } catch (error) {
@@ -60,11 +64,15 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
       const context = canvas.getContext('2d');
       const video = videoRef.current;
       
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      // Set canvas dimensions to match video
+      canvas.width = video.videoWidth || video.clientWidth;
+      canvas.height = video.videoHeight || video.clientHeight;
       
       if (context) {
-        context.drawImage(video, 0, 0);
+        // Draw the current video frame to canvas
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Convert to blob and create file
         canvas.toBlob((blob) => {
           if (blob) {
             const file = new File([blob], 'installation-photo.jpg', { type: 'image/jpeg' });
@@ -73,7 +81,9 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
             stopCamera();
           }
           setIsCapturing(false);
-        }, 'image/jpeg', 0.8);
+        }, 'image/jpeg', 0.9);
+      } else {
+        setIsCapturing(false);
       }
     }
   };
@@ -181,7 +191,7 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
           </>
         ) : showCamera ? (
           <>
-            {/* Live Camera Feed with AR Overlay */}
+            {/* Live Camera Feed with Simple Frame */}
             <div className="relative aspect-video bg-black overflow-hidden rounded-lg">
               <video
                 ref={videoRef}
@@ -191,32 +201,12 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
                 className="w-full h-full object-cover"
               />
               
-              {/* AR Overlay for Windshield Alignment */}
+              {/* Simple Windshield Frame Overlay */}
               <div className="absolute inset-0 pointer-events-none">
-                {/* Windshield boundary frame */}
-                <div className="absolute inset-4 border-2 border-white/70 bg-transparent rounded-lg">
+                <div className="absolute inset-4 border-2 border-white/80 bg-transparent rounded-lg">
                   <div className="absolute -top-6 left-2 text-white text-xs bg-black/70 px-2 py-1 rounded">
                     Align windshield within frame
                   </div>
-                </div>
-                
-                {/* TagMax device target area */}
-                <div className="absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-16 border-2 border-yellow-400 bg-yellow-400/10 rounded">
-                  <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-yellow-400 text-xs bg-black/70 px-2 py-1 rounded whitespace-nowrap">
-                    TagMax location
-                  </div>
-                </div>
-                
-                {/* Corner guides */}
-                <div className="absolute top-4 left-4 w-6 h-6 border-t-2 border-l-2 border-white/70"></div>
-                <div className="absolute top-4 right-4 w-6 h-6 border-t-2 border-r-2 border-white/70"></div>
-                <div className="absolute bottom-4 left-4 w-6 h-6 border-b-2 border-l-2 border-white/70"></div>
-                <div className="absolute bottom-4 right-4 w-6 h-6 border-b-2 border-r-2 border-white/70"></div>
-                
-                {/* Center crosshair */}
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                  <div className="w-8 h-0.5 bg-white/50"></div>
-                  <div className="w-0.5 h-8 bg-white/50 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
                 </div>
               </div>
             </div>
@@ -224,10 +214,10 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
             {/* Instructions */}
             <div className="text-center space-y-2">
               <p className="text-sm font-medium text-foreground">
-                Position your windshield within the frame
+                Position your windshield within the white frame
               </p>
               <p className="text-xs text-muted-foreground">
-                Align the TagMax device with the yellow target area
+                Make sure TagMax is clearly visible
               </p>
             </div>
             
