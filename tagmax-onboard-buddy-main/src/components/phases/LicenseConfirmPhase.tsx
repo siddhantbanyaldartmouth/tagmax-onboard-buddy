@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { PhaseContainer } from '../PhaseContainer';
 import { VehicleData } from '@/hooks/useOnboardingFlow';
-import { Check, Edit, Loader2, Upload } from 'lucide-react';
+import { Check, Edit, Loader2 } from 'lucide-react';
 
 interface LicenseConfirmPhaseProps {
   vehicleData: VehicleData;
@@ -55,7 +55,7 @@ export const LicenseConfirmPhase: React.FC<LicenseConfirmPhaseProps> = ({
   const handleConfirm = async () => {
     setIsUploading(true);
     
-    // Brief upload indication (1.5 seconds) then smooth transition
+    // Simulate upload process (2-3 seconds)
     setTimeout(() => {
       onUpdate({ 
         nickname: nickname.trim() || undefined,
@@ -63,7 +63,7 @@ export const LicenseConfirmPhase: React.FC<LicenseConfirmPhaseProps> = ({
       });
       setIsUploading(false);
       onNext();
-    }, 1500);
+    }, 2500);
   };
 
   return (
@@ -162,7 +162,7 @@ export const LicenseConfirmPhase: React.FC<LicenseConfirmPhaseProps> = ({
             {isUploading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Uploading Data...
+                Uploading...
               </>
             ) : (
               <>
