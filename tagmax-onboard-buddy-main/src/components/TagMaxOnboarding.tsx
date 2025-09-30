@@ -2,6 +2,7 @@ import React from 'react';
 import { useOnboardingFlow } from '@/hooks/useOnboardingFlow';
 import { WelcomePhase } from './phases/WelcomePhase';
 import { LicenseEntryPhase } from './phases/LicenseEntryPhase';
+import { VinLoadingPhase } from './phases/VinLoadingPhase';
 import { LicenseConfirmPhase } from './phases/LicenseConfirmPhase';
 import { ActivatePhase } from './phases/ActivatePhase';
 import { LocatePhase } from './phases/LocatePhase';
@@ -78,6 +79,7 @@ export const TagMaxOnboarding: React.FC = () => {
         state: data.vehicle?.state,
         licensePlate: data.vehicle?.licensePlate,
         nickname: data.vehicle?.nickname,
+        vin: data.vehicle?.vin,
         timestamp: new Date().toISOString()
       });
 
@@ -109,6 +111,9 @@ export const TagMaxOnboarding: React.FC = () => {
           onBack={prevPhase}
         />
       );
+      
+    case 'vin-loading':
+      return <VinLoadingPhase onComplete={nextPhase} />;
       
     case 'license-confirm':
       return (
