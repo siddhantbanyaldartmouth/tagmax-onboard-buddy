@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { PhaseContainer } from '../PhaseContainer';
 import { VehicleData } from '@/hooks/useOnboardingFlow';
 import licensePlateSample from '@/assets/Example license plate.png';
-import { Loader2, Upload } from 'lucide-react';
 
 interface LicenseEntryPhaseProps {
   vehicleData: Partial<VehicleData>;
@@ -35,7 +34,6 @@ export const LicenseEntryPhase: React.FC<LicenseEntryPhaseProps> = ({
   const [scanError, setScanError] = useState<string | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [consentGiven, setConsentGiven] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const handleScan = async () => {
@@ -68,16 +66,6 @@ export const LicenseEntryPhase: React.FC<LicenseEntryPhaseProps> = ({
       setScanError("Camera access denied. Please enter manually.");
       setEntryMethod('manual');
     }
-  };
-
-  const handleContinue = async () => {
-    setIsUploading(true);
-    
-    // Simulate upload delay (2-3 seconds)
-    setTimeout(() => {
-      setIsUploading(false);
-      onNext();
-    }, 2500);
   };
 
   // Cleanup stream on unmount
@@ -117,123 +105,122 @@ export const LicenseEntryPhase: React.FC<LicenseEntryPhaseProps> = ({
         </div>
 
         {vehicleData.state && (
-          <div className="space-y-4">
-            <Label>License Plate Entry Method</Label>
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                variant={entryMethod === 'manual' ? 'default' : 'outline'}
-                onClick={() => setEntryMethod('manual')}
-                className="font-medium"
-              >
-                Manual Entry
-              </Button>
-              <Button
-                variant={entryMethod === 'scan' ? 'default' : 'outline'}
-                onClick={() => {
-                  setEntryMethod('scan');
-                  if (!isScanning) handleScan();
-                }}
-                disabled={isScanning}
-                className="font-medium"
-              >
-                {isScanning ? 'Scanning...' : 'Scan Plate'}
-              </Button>
-            </div>
-
-            {scanError && (
-              <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
-                <p className="text-destructive text-sm">{scanError}</p>
+          <>
+            <div className="space-y-4">
+              <Label>License Plate Entry Method</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  variant={entryMethod === 'manual' ? 'default' : 'outline'}
+                  onClick={() => setEntryMethod('manual')}
+                  className="font-medium"
+                >
+                  Manual Entry
+                </Button>
+                <Button
+                  variant={entryMethod === 'scan' ? 'default' : 'outline'}
+                  onClick={() => {
+                    setEntryMethod('scan');
+                    if (!isScanning) handleScan();
+                  }}
+                  disabled={isScanning}
+                  className="font-medium"
+                >
+                  {isScanning ? 'Scanning...' : 'Scan Plate'}
+                </Button>
               </div>
-            )}
 
-            {isScanning && (
-              <div className="space-y-4">
-                <div className="relative aspect-video bg-black overflow-hidden rounded-md">
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="w-full h-full object-cover"
-                  />
-                  
-                  {/* Scanning overlay */}
-                  <div className="absolute inset-0 pointer-events-none">
-                    {/* License plate target area */}
-                    <div className="absolute inset-8 border-2 border-yellow-400 bg-transparent">
-                      <div className="absolute -top-6 left-0 text-yellow-400 text-xs bg-black/50 px-2 py-1">
-                        Position license plate within frame
+              {scanError && (
+                <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+                  <p className="text-destructive text-sm">{scanError}</p>
+                </div>
+              )}
+
+              {isScanning && (
+                <div className="space-y-4">
+                  <div className="relative aspect-video bg-black overflow-hidden rounded-md">
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-full object-cover"
+                    />
+                    
+                    {/* Scanning overlay */}
+                    <div className="absolute inset-0 pointer-events-none">
+                      {/* License plate target area */}
+                      <div className="absolute inset-8 border-2 border-yellow-400 bg-transparent">
+                        <div className="absolute -top-6 left-0 text-yellow-400 text-xs bg-black/50 px-2 py-1">
+                          Position license plate within frame
+                        </div>
+                      </div>
+                      
+                      {/* Scanning animation */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-16 h-16 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
+                      </div>
+                      
+                      {/* Scanning text */}
+                      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-sm bg-black/70 px-4 py-2 rounded">
+                        Scanning license plate...
                       </div>
                     </div>
-                    
-                    {/* Scanning animation */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-16 h-16 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
-                    </div>
-                    
-                    {/* Scanning text */}
-                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-sm bg-black/70 px-4 py-2 rounded">
-                      Scanning license plate...
-                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground text-center">
+                    Point camera at license plate and hold steady...
+                  </p>
+                </div>
+              )}
+
+              {entryMethod === 'manual' && !isScanning && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center">
+                    <img 
+                      src={licensePlateSample} 
+                      alt="License plate example" 
+                      className="w-32 h-20 object-cover border"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="licensePlate">License Plate Number</Label>
+                    <Input
+                      id="licensePlate"
+                      placeholder="Enter License Plate (e.g., 215 BG2)"
+                      value={vehicleData.licensePlate || ''}
+                      onChange={(e) => onUpdate({ licensePlate: e.target.value.toUpperCase() })}
+                      className="uppercase font-mono text-center text-lg"
+                    />
                   </div>
                 </div>
-                <p className="text-sm text-muted-foreground text-center">
-                  Point camera at license plate and hold steady...
+              )}
+            </div>
+
+            {/* Consent Section - Only show after state is selected */}
+            <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
+              <div className="flex items-start space-x-3">
+                <Checkbox
+                  id="consent"
+                  checked={consentGiven}
+                  onCheckedChange={(checked) => setConsentGiven(checked as boolean)}
+                  className="mt-1"
+                />
+                <div className="space-y-2">
+                  <Label htmlFor="consent" className="text-sm font-medium leading-relaxed">
+                    I consent to CMT using LicensePlateData.com to retrieve VIN information for vehicle validation
+                  </Label>
+                </div>
+              </div>
+              
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <p className="text-sm text-blue-800 font-medium mb-1">Important Reminder:</p>
+                <p className="text-xs text-blue-700">
+                  Please ensure your Tag Max device is installed in this vehicle. For any re-assignment to a different vehicle, 
+                  please contact our customer support team at <span className="font-mono">solotagsupport@cmtelematics.com</span>
                 </p>
               </div>
-            )}
-
-            {entryMethod === 'manual' && !isScanning && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-center">
-                  <img 
-                    src={licensePlateSample} 
-                    alt="License plate example" 
-                    className="w-32 h-20 object-cover border"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="licensePlate">License Plate Number</Label>
-                  <Input
-                    id="licensePlate"
-                    placeholder="Enter License Plate (e.g., 215 BG2)"
-                    value={vehicleData.licensePlate || ''}
-                    onChange={(e) => onUpdate({ licensePlate: e.target.value.toUpperCase() })}
-                    className="uppercase font-mono text-center text-lg"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Consent and Vehicle Reminder Section */}
-        <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
-          <div className="flex items-start space-x-3">
-            <Checkbox
-              id="consent"
-              checked={consentGiven}
-              onCheckedChange={(checked) => setConsentGiven(checked as boolean)}
-              className="mt-1"
-            />
-            <div className="space-y-2">
-              <Label htmlFor="consent" className="text-sm font-medium leading-relaxed">
-                I consent to CMT using LicensePlateData.com to retrieve VIN information for vehicle validation
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                This helps us verify your vehicle information and ensure proper Tag Max installation.
-              </p>
             </div>
-          </div>
-          
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-            <p className="text-sm text-blue-800 font-medium mb-1">Important Reminder:</p>
-            <p className="text-xs text-blue-700">
-              Please ensure your Tag Max device is installed in this vehicle. For any re-assignment to a different vehicle, 
-              please contact our customer support team at <span className="font-mono">solotagsupport@cmtelematics.com</span>
-            </p>
-          </div>
-        </div>
+          </>
+        )}
 
         <div className="flex gap-3 mt-auto">
           {onBack && (
@@ -241,28 +228,17 @@ export const LicenseEntryPhase: React.FC<LicenseEntryPhaseProps> = ({
               variant="outline"
               onClick={onBack}
               className="flex-1"
-              disabled={isUploading}
             >
               Back
             </Button>
           )}
           <Button
-            onClick={handleContinue}
-            disabled={!canProceed || isUploading}
+            onClick={onNext}
+            disabled={!canProceed}
             className="flex-1 font-semibold"
             variant="default"
           >
-            {isUploading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Uploading Data...
-              </>
-            ) : (
-              <>
-                <Upload className="w-4 h-4 mr-2" />
-                Continue
-              </>
-            )}
+            Continue
           </Button>
         </div>
       </div>
