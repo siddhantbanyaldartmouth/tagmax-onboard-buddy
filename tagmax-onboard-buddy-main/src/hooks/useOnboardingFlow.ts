@@ -4,6 +4,7 @@ export interface VehicleData {
   state: string;
   licensePlate: string;
   nickname?: string;
+  vin?: string;
 }
 
 export interface CSATData {
@@ -17,7 +18,7 @@ export interface OnboardingData {
   csat: CSATData;
 }
 
-type Phase = 'welcome' | 'license-entry' | 'license-confirm' | 'activate' | 'locate' | 'apply' | 'photo-upload' | 'csat' | 'complete';
+type Phase = 'welcome' | 'license-entry' | 'vin-loading' | 'license-confirm' | 'activate' | 'locate' | 'apply' | 'photo-upload' | 'csat' | 'complete';
 
 export const useOnboardingFlow = () => {
   const [currentPhase, setCurrentPhase] = useState<Phase>('welcome');
@@ -46,7 +47,7 @@ export const useOnboardingFlow = () => {
 
   const nextPhase = useCallback(() => {
     const phases: Phase[] = [
-      'welcome', 'license-entry', 'license-confirm', 
+      'welcome', 'license-entry', 'vin-loading', 'license-confirm', 
       'activate', 'locate', 'apply', 
       'photo-upload', 'csat', 'complete'
     ];
@@ -59,7 +60,7 @@ export const useOnboardingFlow = () => {
 
   const prevPhase = useCallback(() => {
     const phases: Phase[] = [
-      'welcome', 'license-entry', 'license-confirm', 
+      'welcome', 'license-entry', 'vin-loading', 'license-confirm', 
       'activate', 'locate', 'apply', 
       'photo-upload', 'csat', 'complete'
     ];
@@ -76,7 +77,7 @@ export const useOnboardingFlow = () => {
 
   const getPhaseNumber = () => {
     const phaseMapping: Record<Phase, number> = {
-      'welcome': 0, 'license-entry': 0, 'license-confirm': 0,
+      'welcome': 0, 'license-entry': 0, 'vin-loading': 0, 'license-confirm': 0,
       'activate': 1, 'locate': 1, 'apply': 1,
       'photo-upload': 2,
       'csat': 3, 'complete': 3
