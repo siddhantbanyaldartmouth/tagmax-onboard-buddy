@@ -8,10 +8,10 @@ interface VinLoadingPhaseProps {
 
 export const VinLoadingPhase: React.FC<VinLoadingPhaseProps> = ({ onComplete }) => {
   useEffect(() => {
-    // Simulate 2-second loading time
+    // Simulate 4-second loading time
     const timer = setTimeout(() => {
       onComplete();
-    }, 2000);
+    }, 4000);
 
     return () => clearTimeout(timer);
   }, [onComplete]);
@@ -70,7 +70,7 @@ export const VinLoadingPhase: React.FC<VinLoadingPhaseProps> = ({ onComplete }) 
         <div className="w-full max-w-sm">
           <div className="flex justify-between text-xs text-muted-foreground mb-2">
             <span>Retrieving VIN...</span>
-            <span>~2 seconds</span>
+            <span>~4 seconds</span>
           </div>
           <div className="w-full bg-muted rounded-full h-2">
             <div className="bg-primary h-2 rounded-full animate-pulse" style={{ width: '60%' }}></div>
