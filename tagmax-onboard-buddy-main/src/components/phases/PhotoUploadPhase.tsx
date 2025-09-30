@@ -1,7 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { PhaseContainer } from '../PhaseContainer';
-import { Camera, Upload, RotateCcw, Check } from 'lucide-react';
+import { Camera, Upload, RotateCcw, Check, Square } from 'lucide-react';
 
 interface PhotoUploadPhaseProps {
   onPhotoUpload: (file: File) => void;
@@ -17,16 +17,11 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
   const [photo, setPhoto] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [isCapturing, setIsCapturing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setPhoto(file);
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
-    }
-  };
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const startCamera = async () => {
     try {
@@ -34,37 +29,61 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
         video: { facingMode: 'environment' } 
       });
       
-      // Create a simple camera interface
-      const video = document.createElement('video');
-      video.srcObject = stream;
-      video.play();
+      streamRef.current = stream;
+      setShowCamera(true);
       
-      // Show camera in a simple way
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d');
-      
-      // For simplicity, just capture after 2 seconds
-      setTimeout(() => {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        context?.drawImage(video, 0, 0);
-        
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const file = new File([blob], 'installation-photo.jpg', { type: 'image/jpeg' });
-            setPhoto(file);
-            setPreviewUrl(canvas.toDataURL());
-          }
-        }, 'image/jpeg', 0.8);
-        
-        // Stop the stream
-        stream.getTracks().forEach(track => track.stop());
-      }, 2000);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
       
     } catch (error) {
       console.error('Camera access denied:', error);
       // Fallback to file input
       fileInputRef.current?.click();
+    }
+  };
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setShowCamera(false);
+    setIsCapturing(false);
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && !isCapturing) {
+      setIsCapturing(true);
+      
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      const video = videoRef.current;
+      
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      if (context) {
+        context.drawImage(video, 0, 0);
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const file = new File([blob], 'installation-photo.jpg', { type: 'image/jpeg' });
+            setPhoto(file);
+            setPreviewUrl(canvas.toDataURL());
+            stopCamera();
+          }
+          setIsCapturing(false);
+        }, 'image/jpeg', 0.8);
+      }
+    }
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setPhoto(file);
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
     }
   };
 
@@ -90,6 +109,15 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
     }
   };
 
+  // Cleanup stream on unmount
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
+
   return (
     <PhaseContainer
       currentPhase={2}
@@ -98,7 +126,7 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
       subtitle="Upload a photo of your installed TagMax"
     >
       <div className="space-y-6">
-        {!photo ? (
+        {!showCamera && !photo ? (
           <>
             <div className="text-center space-y-4">
               <div className="text-4xl mb-4">📸</div>
@@ -151,8 +179,91 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
               </Button>
             </div>
           </>
+        ) : showCamera ? (
+          <>
+            {/* Live Camera Feed with AR Overlay */}
+            <div className="relative aspect-video bg-black overflow-hidden rounded-lg">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover"
+              />
+              
+              {/* AR Overlay for Windshield Alignment */}
+              <div className="absolute inset-0 pointer-events-none">
+                {/* Windshield boundary frame */}
+                <div className="absolute inset-4 border-2 border-white/70 bg-transparent rounded-lg">
+                  <div className="absolute -top-6 left-2 text-white text-xs bg-black/70 px-2 py-1 rounded">
+                    Align windshield within frame
+                  </div>
+                </div>
+                
+                {/* TagMax device target area */}
+                <div className="absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-16 border-2 border-yellow-400 bg-yellow-400/10 rounded">
+                  <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-yellow-400 text-xs bg-black/70 px-2 py-1 rounded whitespace-nowrap">
+                    TagMax location
+                  </div>
+                </div>
+                
+                {/* Corner guides */}
+                <div className="absolute top-4 left-4 w-6 h-6 border-t-2 border-l-2 border-white/70"></div>
+                <div className="absolute top-4 right-4 w-6 h-6 border-t-2 border-r-2 border-white/70"></div>
+                <div className="absolute bottom-4 left-4 w-6 h-6 border-b-2 border-l-2 border-white/70"></div>
+                <div className="absolute bottom-4 right-4 w-6 h-6 border-b-2 border-r-2 border-white/70"></div>
+                
+                {/* Center crosshair */}
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                  <div className="w-8 h-0.5 bg-white/50"></div>
+                  <div className="w-0.5 h-8 bg-white/50 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Instructions */}
+            <div className="text-center space-y-2">
+              <p className="text-sm font-medium text-foreground">
+                Position your windshield within the frame
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Align the TagMax device with the yellow target area
+              </p>
+            </div>
+            
+            {/* Camera Controls */}
+            <div className="flex gap-3">
+              <Button
+                onClick={stopCamera}
+                variant="outline"
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              
+              <Button
+                onClick={capturePhoto}
+                disabled={isCapturing}
+                className="flex-1 flex items-center gap-2"
+                variant="default"
+              >
+                {isCapturing ? (
+                  <>
+                    <Square className="w-4 h-4 animate-pulse" />
+                    Capturing...
+                  </>
+                ) : (
+                  <>
+                    <Square className="w-4 h-4" />
+                    Capture Photo
+                  </>
+                )}
+              </Button>
+            </div>
+          </>
         ) : (
           <>
+            {/* Photo Preview */}
             <div className="space-y-4">
               <div className="aspect-video bg-muted overflow-hidden rounded-lg">
                 {previewUrl && (
