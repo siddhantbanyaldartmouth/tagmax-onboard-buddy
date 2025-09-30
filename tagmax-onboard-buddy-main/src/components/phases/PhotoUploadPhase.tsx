@@ -26,18 +26,22 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
+        video: { 
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        } 
       });
       
       streamRef.current = stream;
       setShowCamera(true);
       
-      // Wait for video to load
+      // Ensure video element is ready
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.onloadedmetadata = () => {
-          videoRef.current?.play();
-        };
+        
+        // Force play the video
+        videoRef.current.play().catch(console.error);
       }
       
     } catch (error) {
@@ -199,6 +203,7 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
                 playsInline
                 muted
                 className="w-full h-full object-cover"
+                style={{ transform: 'scaleX(-1)' }} // Mirror the video
               />
               
               {/* Simple Windshield Frame Overlay */}
