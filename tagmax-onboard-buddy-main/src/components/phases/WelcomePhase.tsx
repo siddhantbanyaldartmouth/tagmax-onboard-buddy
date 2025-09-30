@@ -20,7 +20,7 @@ export const WelcomePhase: React.FC<WelcomePhaseProps> = ({ onNext }) => {
       <div className="space-y-8">
         <div className="flex justify-center items-center space-x-6 mb-6">
           <img src={progressiveLogo} alt="Progressive" className="h-6" />
-          <img src={cmtLogo} alt="Cambridge Mobile Telematics" className="h-16" />
+          <img src={cmtLogo} alt="Cambridge Mobile Telematics" className="h-20" />
         </div>
         
         <div className="text-center space-y-6">
