@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { PhaseContainer } from '../PhaseContainer';
 import { VehicleData } from '@/hooks/useOnboardingFlow';
-import { Check, Edit } from 'lucide-react';
+import { Check, Edit, Loader2, Upload } from 'lucide-react';
 
 interface LicenseConfirmPhaseProps {
   vehicleData: VehicleData;
@@ -50,13 +50,20 @@ export const LicenseConfirmPhase: React.FC<LicenseConfirmPhaseProps> = ({
 }) => {
   const [nickname, setNickname] = useState(vehicleData.nickname || '');
   const [vin] = useState(vehicleData.vin || generateRandomVIN());
+  const [isUploading, setIsUploading] = useState(false);
 
-  const handleConfirm = () => {
-    onUpdate({ 
-      nickname: nickname.trim() || undefined,
-      vin: vin
-    });
-    onNext();
+  const handleConfirm = async () => {
+    setIsUploading(true);
+    
+    // Simulate Google Scripts upload delay (3-4 seconds)
+    setTimeout(() => {
+      onUpdate({ 
+        nickname: nickname.trim() || undefined,
+        vin: vin
+      });
+      setIsUploading(false);
+      onNext();
+    }, 3500);
   };
 
   return (
@@ -77,6 +84,7 @@ export const LicenseConfirmPhase: React.FC<LicenseConfirmPhaseProps> = ({
                   size="sm"
                   onClick={onBack}
                   className="h-6 w-6 p-0"
+                  disabled={isUploading}
                 >
                   <Edit className="w-3 h-3" />
                 </Button>
@@ -94,6 +102,7 @@ export const LicenseConfirmPhase: React.FC<LicenseConfirmPhaseProps> = ({
                   size="sm"
                   onClick={onBack}
                   className="h-6 w-6 p-0"
+                  disabled={isUploading}
                 >
                   <Edit className="w-3 h-3" />
                 </Button>
@@ -111,6 +120,7 @@ export const LicenseConfirmPhase: React.FC<LicenseConfirmPhaseProps> = ({
                   size="sm"
                   onClick={onBack}
                   className="h-6 w-6 p-0"
+                  disabled={isUploading}
                 >
                   <Edit className="w-3 h-3" />
                 </Button>
@@ -127,6 +137,7 @@ export const LicenseConfirmPhase: React.FC<LicenseConfirmPhaseProps> = ({
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
             maxLength={50}
+            disabled={isUploading}
           />
           <p className="text-xs text-muted-foreground mt-1">
             Give your vehicle a friendly name for easy identification
@@ -138,6 +149,7 @@ export const LicenseConfirmPhase: React.FC<LicenseConfirmPhaseProps> = ({
             variant="outline"
             onClick={onBack}
             className="flex-1"
+            disabled={isUploading}
           >
             Back
           </Button>
@@ -145,9 +157,19 @@ export const LicenseConfirmPhase: React.FC<LicenseConfirmPhaseProps> = ({
             onClick={handleConfirm}
             className="flex-1 flex items-center gap-2"
             variant="success"
+            disabled={isUploading}
           >
-            <Check className="w-4 h-4" />
-            Confirm
+            {isUploading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Uploading Data...
+              </>
+            ) : (
+              <>
+                <Check className="w-4 h-4" />
+                Confirm
+              </>
+            )}
           </Button>
         </div>
       </div>
