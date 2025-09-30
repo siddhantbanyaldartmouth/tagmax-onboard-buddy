@@ -17,12 +17,7 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
   const [photo, setPhoto] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [showCamera, setShowCamera] = useState(false);
-  const [isDetecting, setIsDetecting] = useState(false);
-  const [detectionSuccess, setDetectionSuccess] = useState<boolean | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -38,23 +33,33 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: 'environment' } 
       });
-      streamRef.current = stream;
-      setShowCamera(true);
       
-      if (videoRef.current) {
-        (videoRef.current as HTMLVideoElement).srcObject = stream;
-      }
+      // Create a simple camera interface
+      const video = document.createElement('video');
+      video.srcObject = stream;
+      video.play();
       
-      // Start AR detection simulation after camera loads
+      // Show camera in a simple way
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      
+      // For simplicity, just capture after 2 seconds
       setTimeout(() => {
-        setIsDetecting(true);
-        // Simulate detection after 2 seconds
-        setTimeout(() => {
-          setIsDetecting(false);
-          // Always show success for better UX in prototype
-          setDetectionSuccess(true);
-        }, 2000);
-      }, 1000);
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context?.drawImage(video, 0, 0);
+        
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const file = new File([blob], 'installation-photo.jpg', { type: 'image/jpeg' });
+            setPhoto(file);
+            setPreviewUrl(canvas.toDataURL());
+          }
+        }, 'image/jpeg', 0.8);
+        
+        // Stop the stream
+        stream.getTracks().forEach(track => track.stop());
+      }, 2000);
       
     } catch (error) {
       console.error('Camera access denied:', error);
@@ -63,41 +68,9 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
     }
   };
 
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    setShowCamera(false);
-    setIsDetecting(false);
-    setDetectionSuccess(null);
-  };
-
-  const capturePhoto = () => {
-    if (videoRef.current) {
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d');
-      canvas.width = (videoRef.current as HTMLVideoElement).videoWidth;
-      canvas.height = (videoRef.current as HTMLVideoElement).videoHeight;
-      
-      if (context) {
-        context.drawImage(videoRef.current as HTMLVideoElement, 0, 0);
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const file = new File([blob], 'installation-photo.jpg', { type: 'image/jpeg' });
-            setPhoto(file);
-            setPreviewUrl(canvas.toDataURL());
-            stopCamera();
-          }
-        }, 'image/jpeg', 0.8);
-      }
-    }
-  };
-
   const handleRetry = () => {
     setPhoto(null);
     setPreviewUrl(null);
-    setDetectionSuccess(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -125,7 +98,7 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
       subtitle="Upload a photo of your installed TagMax"
     >
       <div className="space-y-6">
-        {!showCamera && !photo ? (
+        {!photo ? (
           <>
             <div className="text-center space-y-4">
               <div className="text-4xl mb-4">📸</div>
@@ -178,98 +151,10 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
               </Button>
             </div>
           </>
-        ) : showCamera ? (
-          <>
-            <div className="relative aspect-video bg-black overflow-hidden">
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-full h-full object-cover"
-              />
-              
-              {/* AR Overlay */}
-              <div className="absolute inset-0 pointer-events-none">
-                {/* Windshield boundary */}
-                <div className="absolute inset-4 border-2 border-white/50 bg-transparent">
-                  <div className="absolute top-2 left-2 text-white text-xs bg-black/50 px-2 py-1">
-                    Position windshield within frame
-                  </div>
-                </div>
-                
-                {/* TagMax device target */}
-                <div className={`absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-12 border-2 ${
-                  detectionSuccess === true ? 'border-green-400 bg-green-400/20' : 
-                  detectionSuccess === false ? 'border-red-400 bg-red-400/20' : 
-                  'border-yellow-400 bg-yellow-400/20'
-                }`}>
-                  <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-white text-xs bg-black/50 px-2 py-1 whitespace-nowrap">
-                    TagMax location
-                  </div>
-                </div>
-                
-                {/* Detection status */}
-                {isDetecting && (
-                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-sm bg-black/70 px-4 py-2">
-                    Detecting TagMax...
-                  </div>
-                )}
-                
-                {detectionSuccess === false && (
-                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-sm bg-red-600/80 px-4 py-2 text-center">
-                    We can't detect your TagMax.<br />Please adjust your camera and try again.
-                  </div>
-                )}
-                
-                {detectionSuccess === true && (
-                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-sm bg-green-600/80 px-4 py-2">
-                    TagMax detected! Ready to capture.
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            <div className="flex gap-3">
-              <Button
-                onClick={stopCamera}
-                variant="outline"
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              
-              {detectionSuccess === false ? (
-                <Button
-                  onClick={() => {
-                    setDetectionSuccess(null);
-                    setIsDetecting(true);
-                    setTimeout(() => {
-                      setIsDetecting(false);
-                      setDetectionSuccess(true);
-                    }, 2000);
-                  }}
-                  className="flex-1"
-                  variant="default"
-                >
-                  Retry Detection
-                </Button>
-              ) : (
-                <Button
-                  onClick={capturePhoto}
-                  disabled={isDetecting}
-                  className="flex-1"
-                  variant="default"
-                >
-                  {detectionSuccess === true ? 'Capture Photo' : 'Continue Anyway'}
-                </Button>
-              )}
-            </div>
-          </>
         ) : (
           <>
             <div className="space-y-4">
-              <div className="aspect-video bg-muted overflow-hidden">
+              <div className="aspect-video bg-muted overflow-hidden rounded-lg">
                 {previewUrl && (
                   <img
                     src={previewUrl}
