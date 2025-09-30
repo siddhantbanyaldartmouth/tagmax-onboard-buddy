@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { PhaseContainer } from '../PhaseContainer';
-import { CheckCircle, PartyPopper, Home, Phone, Mail } from 'lucide-react';
+import { CheckCircle, Home, Phone, Mail } from 'lucide-react';
 
 interface CompletePhaseProps {
   licensePlate?: string;
@@ -25,6 +25,11 @@ export const CompletePhase: React.FC<CompletePhaseProps> = ({ licensePlate }) =>
   const handleFinishSetup = () => {
     // Close the browser tab
     window.close();
+    
+    // Fallback for browsers that don't allow closing
+    setTimeout(() => {
+      alert('Setup complete! You can now close this tab.');
+    }, 100);
   };
 
   return (
@@ -37,22 +42,40 @@ export const CompletePhase: React.FC<CompletePhaseProps> = ({ licensePlate }) =>
       <div className="space-y-6">
         {/* Confetti Animation */}
         {showConfetti && (
-          <div className="fixed inset-0 pointer-events-none z-50">
-            <div className="absolute top-1/4 left-1/4 animate-bounce">
-              <PartyPopper className="w-8 h-8 text-yellow-500" />
-            </div>
-            <div className="absolute top-1/3 right-1/4 animate-bounce delay-100">
-              <PartyPopper className="w-6 h-6 text-pink-500" />
-            </div>
-            <div className="absolute top-1/2 left-1/3 animate-bounce delay-200">
-              <PartyPopper className="w-7 h-7 text-blue-500" />
-            </div>
-            <div className="absolute top-2/3 right-1/3 animate-bounce delay-300">
-              <PartyPopper className="w-5 h-5 text-green-500" />
-            </div>
-            <div className="absolute top-3/4 left-1/2 animate-bounce delay-500">
-              <PartyPopper className="w-6 h-6 text-purple-500" />
-            </div>
+          <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+            {[...Array(20)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute animate-bounce"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  animationDelay: `${Math.random() * 2}s`,
+                  animationDuration: `${2 + Math.random() * 2}s`
+                }}
+              >
+                <div 
+                  className="w-2 h-2 rounded-full"
+                  style={{
+                    backgroundColor: ['#f59e0b', '#ef4444', '#10b981', '#3b82f6', '#8b5cf6'][Math.floor(Math.random() * 5)]
+                  }}
+                />
+              </div>
+            ))}
+            {[...Array(10)].map((_, i) => (
+              <div
+                key={`star-${i}`}
+                className="absolute animate-pulse"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  animationDelay: `${Math.random() * 3}s`,
+                  animationDuration: `${1 + Math.random() * 2}s`
+                }}
+              >
+                <div className="text-2xl">✨</div>
+              </div>
+            ))}
           </div>
         )}
 
