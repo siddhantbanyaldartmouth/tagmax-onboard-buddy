@@ -19,43 +19,36 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
 
   const startCamera = async () => {
+    setShowCamera(true);
+    
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        } 
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
       });
+      setStream(mediaStream);
       
-      streamRef.current = stream;
-      setShowCamera(true);
-      
-      // Ensure video element is ready
       if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        
-        // Force play the video
-        videoRef.current.play().catch(console.error);
+        videoRef.current.srcObject = mediaStream;
       }
       
     } catch (error) {
       console.error('Camera access denied:', error);
+      setShowCamera(false);
       // Fallback to file input
       fileInputRef.current?.click();
     }
   };
 
   const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
     }
+    setStream(null);
     setShowCamera(false);
     setIsCapturing(false);
   };
@@ -126,11 +119,11 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
   // Cleanup stream on unmount
   useEffect(() => {
     return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
       }
     };
-  }, []);
+  }, [stream]);
 
   return (
     <PhaseContainer
@@ -196,20 +189,19 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
         ) : showCamera ? (
           <>
             {/* Live Camera Feed with Simple Frame */}
-            <div className="relative aspect-video bg-black overflow-hidden rounded-lg">
+            <div className="relative aspect-video bg-black overflow-hidden rounded-md">
               <video
                 ref={videoRef}
                 autoPlay
                 playsInline
                 muted
                 className="w-full h-full object-cover"
-                style={{ transform: 'scaleX(-1)' }} // Mirror the video
               />
               
               {/* Simple Windshield Frame Overlay */}
               <div className="absolute inset-0 pointer-events-none">
                 <div className="absolute inset-4 border-2 border-white/80 bg-transparent rounded-lg">
-                  <div className="absolute -top-6 left-2 text-white text-xs bg-black/70 px-2 py-1 rounded">
+                  <div className="absolute -top-6 left-2 text-white text-xs bg-black/50 px-2 py-1 rounded">
                     Align windshield within frame
                   </div>
                 </div>
