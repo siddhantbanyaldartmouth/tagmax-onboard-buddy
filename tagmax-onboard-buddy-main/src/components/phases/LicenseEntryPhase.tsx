@@ -2,10 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PhaseContainer } from '../PhaseContainer';
 import { VehicleData } from '@/hooks/useOnboardingFlow';
 import licensePlateSample from '@/assets/Example license plate.png';
+import { Loader2, Upload } from 'lucide-react';
 
 interface LicenseEntryPhaseProps {
   vehicleData: Partial<VehicleData>;
@@ -32,6 +34,8 @@ export const LicenseEntryPhase: React.FC<LicenseEntryPhaseProps> = ({
   const [isScanning, setIsScanning] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [consentGiven, setConsentGiven] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const handleScan = async () => {
@@ -66,6 +70,16 @@ export const LicenseEntryPhase: React.FC<LicenseEntryPhaseProps> = ({
     }
   };
 
+  const handleContinue = async () => {
+    setIsUploading(true);
+    
+    // Simulate upload delay (2-3 seconds)
+    setTimeout(() => {
+      setIsUploading(false);
+      onNext();
+    }, 2500);
+  };
+
   // Cleanup stream on unmount
   useEffect(() => {
     return () => {
@@ -75,7 +89,7 @@ export const LicenseEntryPhase: React.FC<LicenseEntryPhaseProps> = ({
     };
   }, [stream]);
 
-  const canProceed = vehicleData.state && vehicleData.licensePlate && vehicleData.licensePlate.length > 0;
+  const canProceed = vehicleData.state && vehicleData.licensePlate && vehicleData.licensePlate.length > 0 && consentGiven;
 
   return (
     <PhaseContainer
@@ -193,23 +207,62 @@ export const LicenseEntryPhase: React.FC<LicenseEntryPhaseProps> = ({
           </div>
         )}
 
+        {/* Consent and Vehicle Reminder Section */}
+        <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
+          <div className="flex items-start space-x-3">
+            <Checkbox
+              id="consent"
+              checked={consentGiven}
+              onCheckedChange={(checked) => setConsentGiven(checked as boolean)}
+              className="mt-1"
+            />
+            <div className="space-y-2">
+              <Label htmlFor="consent" className="text-sm font-medium leading-relaxed">
+                I consent to CMT using LicensePlateData.com to retrieve VIN information for vehicle validation
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                This helps us verify your vehicle information and ensure proper Tag Max installation.
+              </p>
+            </div>
+          </div>
+          
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <p className="text-sm text-blue-800 font-medium mb-1">Important Reminder:</p>
+            <p className="text-xs text-blue-700">
+              Please ensure your Tag Max device is installed in this vehicle. For any re-assignment to a different vehicle, 
+              please contact our customer support team at <span className="font-mono">solotagsupport@cmtelematics.com</span>
+            </p>
+          </div>
+        </div>
+
         <div className="flex gap-3 mt-auto">
           {onBack && (
             <Button
               variant="outline"
               onClick={onBack}
               className="flex-1"
+              disabled={isUploading}
             >
               Back
             </Button>
           )}
           <Button
-            onClick={onNext}
-            disabled={!canProceed}
+            onClick={handleContinue}
+            disabled={!canProceed || isUploading}
             className="flex-1 font-semibold"
             variant="default"
           >
-            Continue
+            {isUploading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Uploading Data...
+              </>
+            ) : (
+              <>
+                <Upload className="w-4 h-4 mr-2" />
+                Continue
+              </>
+            )}
           </Button>
         </div>
       </div>
