@@ -42,8 +42,6 @@ export const LocatePhase: React.FC<LocatePhaseProps> = ({ onNext, onBack }) => {
             <ul className="text-sm text-amber-700 space-y-1">
               <li>• Avoid stickers, tint, or obstructing driver view</li>
               <li>• Choose area with direct sunlight exposure</li>
-              <li>• Clean thoroughly with alcohol pad AND</li>
-              <li>• Ensure surface is completely dry</li>
             </ul>
           </div>
 
