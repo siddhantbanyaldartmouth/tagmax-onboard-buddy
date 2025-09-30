@@ -20,8 +20,10 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
   const [showCamera, setShowCamera] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [tagDetectionPosition, setTagDetectionPosition] = useState({ x: 20, y: 30 });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const animationRef = useRef<number>();
 
   const startCamera = async () => {
     setShowCamera(true);
@@ -51,7 +53,42 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
     setStream(null);
     setShowCamera(false);
     setIsCapturing(false);
+    
+    // Stop animation
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+    }
   };
+
+  // Animate the tag detection overlay
+  useEffect(() => {
+    if (showCamera) {
+      const animate = () => {
+        setTagDetectionPosition(prev => {
+          // Create a smooth circular motion around the windshield area
+          const time = Date.now() * 0.001;
+          const radius = 15; // Movement radius
+          const centerX = 50; // Center of windshield area
+          const centerY = 40;
+          
+          return {
+            x: centerX + Math.sin(time) * radius + Math.sin(time * 0.7) * 5,
+            y: centerY + Math.cos(time * 0.8) * radius + Math.cos(time * 1.2) * 3
+          };
+        });
+        
+        animationRef.current = requestAnimationFrame(animate);
+      };
+      
+      animate();
+    }
+    
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [showCamera]);
 
   const capturePhoto = () => {
     if (videoRef.current && !isCapturing) {
@@ -122,6 +159,9 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
       }
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
     };
   }, [stream]);
 
@@ -188,7 +228,7 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
           </>
         ) : showCamera ? (
           <>
-            {/* Live Camera Feed with Simple Frame */}
+            {/* Live Camera Feed with AR Overlays */}
             <div className="relative aspect-video bg-black overflow-hidden rounded-md">
               <video
                 ref={videoRef}
@@ -198,11 +238,28 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
                 className="w-full h-full object-cover"
               />
               
-              {/* Simple Windshield Frame Overlay */}
+              {/* Windshield Frame Overlay */}
               <div className="absolute inset-0 pointer-events-none">
                 <div className="absolute inset-4 border-2 border-white/80 bg-transparent rounded-lg">
                   <div className="absolute -top-6 left-2 text-white text-xs bg-black/50 px-2 py-1 rounded">
                     Align windshield within frame
+                  </div>
+                </div>
+              </div>
+
+              {/* Moving Tag Detection Overlay */}
+              <div className="absolute inset-0 pointer-events-none">
+                <div 
+                  className="absolute w-16 h-12 border-2 border-blue-400/30 bg-blue-400/10 rounded-lg flex items-center justify-center"
+                  style={{
+                    left: `${tagDetectionPosition.x}%`,
+                    top: `${tagDetectionPosition.y}%`,
+                    transition: 'all 0.1s ease-out'
+                  }}
+                >
+                  <div className="text-blue-300 text-xs font-medium text-center">
+                    <div className="animate-pulse">Attempting to locate Tag</div>
+                    <div className="w-2 h-2 bg-blue-400 rounded-full mx-auto mt-1 animate-bounce"></div>
                   </div>
                 </div>
               </div>
