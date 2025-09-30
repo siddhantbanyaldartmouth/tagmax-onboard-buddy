@@ -21,6 +21,7 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
   const [isCapturing, setIsCapturing] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [tagDetectionPosition, setTagDetectionPosition] = useState({ x: 20, y: 30 });
+  const [tagDetectionOpacity, setTagDetectionOpacity] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const animationRef = useRef<number>();
@@ -60,22 +61,26 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
     }
   };
 
-  // Animate the tag detection overlay
+  // Animate the tag detection overlay with fading
   useEffect(() => {
     if (showCamera) {
       const animate = () => {
-        setTagDetectionPosition(prev => {
-          // Create a smooth circular motion around the windshield area
-          const time = Date.now() * 0.001;
-          const radius = 15; // Movement radius
-          const centerX = 50; // Center of windshield area
-          const centerY = 40;
-          
-          return {
-            x: centerX + Math.sin(time) * radius + Math.sin(time * 0.7) * 5,
-            y: centerY + Math.cos(time * 0.8) * radius + Math.cos(time * 1.2) * 3
-          };
+        const time = Date.now() * 0.001;
+        
+        // Create a smooth circular motion around the windshield area
+        const radius = 15;
+        const centerX = 50;
+        const centerY = 40;
+        
+        // Update position
+        setTagDetectionPosition({
+          x: centerX + Math.sin(time) * radius + Math.sin(time * 0.7) * 5,
+          y: centerY + Math.cos(time * 0.8) * radius + Math.cos(time * 1.2) * 3
         });
+        
+        // Create fading effect - fade in and out every 2 seconds
+        const fadeCycle = Math.sin(time * 2) * 0.5 + 0.5; // 0 to 1
+        setTagDetectionOpacity(fadeCycle);
         
         animationRef.current = requestAnimationFrame(animate);
       };
@@ -247,18 +252,19 @@ export const PhotoUploadPhase: React.FC<PhotoUploadPhaseProps> = ({
                 </div>
               </div>
 
-              {/* Moving Tag Detection Overlay */}
+              {/* Fading Tag Detection Overlay */}
               <div className="absolute inset-0 pointer-events-none">
                 <div 
-                  className="absolute w-16 h-12 border-2 border-blue-400/30 bg-blue-400/10 rounded-lg flex items-center justify-center"
+                  className="absolute w-16 h-12 border-2 border-blue-400 bg-blue-400/10 rounded-lg flex items-center justify-center"
                   style={{
                     left: `${tagDetectionPosition.x}%`,
                     top: `${tagDetectionPosition.y}%`,
-                    transition: 'all 0.1s ease-out'
+                    opacity: tagDetectionOpacity,
+                    transition: 'opacity 0.2s ease-out'
                   }}
                 >
                   <div className="text-blue-300 text-xs font-medium text-center">
-                    <div className="animate-pulse">Attempting to locate Tag</div>
+                    <div className="animate-pulse">Searching Tag</div>
                     <div className="w-2 h-2 bg-blue-400 rounded-full mx-auto mt-1 animate-bounce"></div>
                   </div>
                 </div>
