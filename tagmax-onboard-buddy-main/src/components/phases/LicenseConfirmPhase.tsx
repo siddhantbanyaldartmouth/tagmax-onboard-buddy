@@ -55,7 +55,7 @@ export const LicenseConfirmPhase: React.FC<LicenseConfirmPhaseProps> = ({
   const handleConfirm = async () => {
     setIsUploading(true);
     
-    // Simulate Google Scripts upload delay (7 seconds - doubled from 3.5)
+    // Brief upload indication (1.5 seconds) then smooth transition
     setTimeout(() => {
       onUpdate({ 
         nickname: nickname.trim() || undefined,
@@ -63,7 +63,7 @@ export const LicenseConfirmPhase: React.FC<LicenseConfirmPhaseProps> = ({
       });
       setIsUploading(false);
       onNext();
-    }, 7000);
+    }, 1500);
   };
 
   return (
